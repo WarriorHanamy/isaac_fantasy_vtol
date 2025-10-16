@@ -1,4 +1,3 @@
-# syntax=docker/dockerfile:1.4
 
 ARG ISAACSIM_BASE_IMAGE=nvcr.io/nvidia/isaac-sim
 ARG ISAACSIM_VERSION=4.5.0
@@ -23,10 +22,6 @@ ENV ISAACSIM_VERSION=${ISAACSIM_VERSION} \
     CYCLONEDDS_URI=${DOCKER_USER_HOME}/.ros/cyclonedds.xml \
     ISAACSIM_PATH=${ISAACLAB_PATH}/_isaac_sim \
     OMNI_KIT_ALLOW_ROOT=1 \
-    http_proxy=http://127.0.0.1:8889 \
-    https_proxy=http://127.0.0.1:8889 \
-    HTTP_PROXY=http://127.0.0.1:8889 \
-    HTTPS_PROXY=http://127.0.0.1:8889 \
     no_proxy=localhost,127.0.0.1,::1 \
     NO_PROXY=localhost,127.0.0.1,::1 \
     NVIDIA_VISIBLE_DEVICES=all \
@@ -37,7 +32,6 @@ ENV ROS2_APT_PACKAGE=${ROS2_APT_PACKAGE}
 SHELL ["/bin/bash", "-c"]
 
 USER root
-
 RUN --mount=type=cache,target=/var/cache/apt \
     apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
@@ -51,15 +45,28 @@ RUN --mount=type=cache,target=/var/cache/apt \
     tmux \
     software-properties-common 
 
-RUN git clone --branch ${ISAACLAB_REF} --depth 1 ${ISAACLAB_REPO} ${ISAACLAB_PATH} && \
+RUN touch /root/.gitconfig
+
+RUN apt-get install -y git-lfs && \
+    git lfs install
+
+RUN --mount=type=secret,id=gitconfig,target=/root/.gitconfig \
+    cat /root/.gitconfig && \
+    git clone --branch ${ISAACLAB_REF} --depth 1 ${ISAACLAB_REPO} ${ISAACLAB_PATH} && \
     rm -rf ${ISAACLAB_PATH}/.git
 
 RUN chmod +x ${ISAACLAB_PATH}/isaaclab.sh
 
 RUN ln -sf ${ISAACSIM_ROOT_PATH} ${ISAACLAB_PATH}/_isaac_sim
 
-RUN ${ISAACLAB_PATH}/isaaclab.sh -p -m pip install --upgrade pip && \
-    ${ISAACLAB_PATH}/isaaclab.sh -p -m pip install toml SciencePlots pxr pytest lark
+# RUN ${ISAACLAB_PATH}/isaaclab.sh --install
+
+RUN ${ISAACLAB_PATH}/isaaclab.sh -p -m pip install --upgrade pip 
+
+RUN ${ISAACLAB_PATH}/isaaclab.sh -p -m pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple/
+
+RUN ${ISAACLAB_PATH}/isaaclab.sh -p -m pip install toml SciencePlots pytest lark 
+RUN ${ISAACLAB_PATH}/isaaclab.sh -p -m pip install usd-core 
 
 RUN --mount=type=cache,target=/var/cache/apt \
     ${ISAACLAB_PATH}/isaaclab.sh -p ${ISAACLAB_PATH}/tools/install_deps.py apt ${ISAACLAB_PATH}/source
@@ -82,7 +89,8 @@ RUN touch /bin/nvidia-smi && \
     mkdir -p /var/run/nvidia-persistenced && \
     touch /var/run/nvidia-persistenced/socket
 
-RUN --mount=type=cache,target=${DOCKER_USER_HOME}/.cache/pip \
+RUN --mount=type=secret,id=gitconfig,target=/root/.gitconfig \
+    --mount=type=cache,target=${DOCKER_USER_HOME}/.cache/pip \
     ${ISAACLAB_PATH}/isaaclab.sh --install
 
 RUN ${ISAACLAB_PATH}/isaaclab.sh -p -m pip uninstall -y quadprog
