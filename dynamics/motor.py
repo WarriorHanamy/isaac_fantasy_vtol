@@ -6,11 +6,26 @@
 # This project uses the IsaacLab framework (https://github.com/isaac-sim/IsaacLab),
 # which is licensed under the BSD-3-Clause License.
 
+from __future__ import annotations
+
+from collections.abc import Sequence
+
 import torch
 
 
 class Motor:
-    def __init__(self, num_envs, taus, init, max_rate, min_rate, dt, use, device="cpu", dtype=torch.float32):
+    def __init__(
+        self,
+        num_envs: int,
+        taus: Sequence[float] | torch.Tensor,
+        init: Sequence[float] | torch.Tensor,
+        max_rate: Sequence[float] | torch.Tensor,
+        min_rate: Sequence[float] | torch.Tensor,
+        dt: float,
+        use: bool,
+        device: torch.device | str = "cpu",
+        dtype: torch.dtype = torch.float32,
+    ) -> None:
         """
         Initializes the motor model.
 
@@ -25,22 +40,24 @@ class Motor:
         - device: 'cpu' or 'cuda' for tensor operations.
         - dtype: Data type for tensors.
         """
-        self.num_envs = num_envs
-        self.num_motors = len(taus)
-        self.dt = dt
-        self.use = use
-        self.init = init
-        self.device = device
-        self.dtype = dtype
+        self.num_envs: int = num_envs
+        self.num_motors: int = len(taus)
+        self.dt: float = dt
+        self.use: bool = use
+        self.init: Sequence[float] | torch.Tensor = init
+        self.device: torch.device | str = device
+        self.dtype: torch.dtype = dtype
 
-        self.omega = torch.tensor(init, device=device).expand(num_envs, -1).clone()  # (num_envs, num_motors)
+        self.omega: torch.Tensor = (
+            torch.tensor(init, device=device, dtype=dtype).expand(num_envs, -1).clone()
+        )  # (num_envs, num_motors)
 
         # Convert to tensors and expand for all drones
-        self.tau = torch.tensor(taus, device=device).expand(num_envs, -1)  # (num_envs, num_motors)
-        self.max_rate = torch.tensor(max_rate, device=device).expand(num_envs, -1)  # (num_envs, num_motors)
-        self.min_rate = torch.tensor(min_rate, device=device).expand(num_envs, -1)  # (num_envs, num_motors)
+        self.tau: torch.Tensor = torch.tensor(taus, device=device, dtype=dtype).expand(num_envs, -1)
+        self.max_rate: torch.Tensor = torch.tensor(max_rate, device=device, dtype=dtype).expand(num_envs, -1)
+        self.min_rate: torch.Tensor = torch.tensor(min_rate, device=device, dtype=dtype).expand(num_envs, -1)
 
-    def compute(self, omega_ref):
+    def compute(self, omega_ref: torch.Tensor) -> torch.Tensor:
         """
         Computes the new omega values based on reference omega and motor dynamics.
 
@@ -63,8 +80,9 @@ class Motor:
         self.omega += self.dt * omega_rate
         return self.omega
 
-    def reset(self, env_ids):
+    def reset(self, env_ids: Sequence[int] | torch.Tensor) -> None:
         """
         Resets the motor model to initial conditions.
         """
-        self.omega[env_ids] = torch.tensor(self.init, device=self.device, dtype=self.dtype).expand(len(env_ids), -1)
+        count = len(env_ids)
+        self.omega[env_ids] = torch.tensor(self.init, device=self.device, dtype=self.dtype).expand(count, -1)

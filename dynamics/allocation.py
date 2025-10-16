@@ -6,11 +6,21 @@
 # This project uses the IsaacLab framework (https://github.com/isaac-sim/IsaacLab),
 # which is licensed under the BSD-3-Clause License.
 
+from __future__ import annotations
+
 import torch
 
 
 class Allocation:
-    def __init__(self, num_envs, arm_length, thrust_coeff, drag_coeff, device="cpu", dtype=torch.float32):
+    def __init__(
+        self,
+        num_envs: int,
+        arm_length: float,
+        thrust_coeff: float,
+        drag_coeff: float,
+        device: torch.device | str = "cpu",
+        dtype: torch.dtype = torch.float32,
+    ) -> None:
         """
         Initializes the allocation matrix for a quadrotor for multiple environments.
 
@@ -33,9 +43,9 @@ class Allocation:
             dtype=dtype,
             device=device,
         )
-        self._allocation_matrix = base_matrix.unsqueeze(0).repeat(num_envs, 1, 1)
-        self._allocation_matrix_inv = torch.linalg.pinv(base_matrix).unsqueeze(0).repeat(num_envs, 1, 1)
-        self._thrust_coeff = thrust_coeff
+        self._allocation_matrix: torch.Tensor = base_matrix.unsqueeze(0).repeat(num_envs, 1, 1)
+        self._allocation_matrix_inv: torch.Tensor = torch.linalg.pinv(base_matrix).unsqueeze(0).repeat(num_envs, 1, 1)
+        self._thrust_coeff: float = thrust_coeff
 
     @property
     def allocation_matrix(self) -> torch.Tensor:
@@ -45,7 +55,7 @@ class Allocation:
     def allocation_matrix_inv(self) -> torch.Tensor:
         return self._allocation_matrix_inv
 
-    def compute(self, omega):
+    def compute(self, omega: torch.Tensor) -> torch.Tensor:
         """
         Computes the total thrust and body torques given the rotor angular velocities.
 
