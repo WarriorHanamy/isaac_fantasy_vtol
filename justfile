@@ -1,16 +1,16 @@
 
+###  Host Operations  ###
 build:
     docker build -f docker/simulation.dockerfile \
-    --secret id=gitconfig,src=$HOME/.gitconfig \ ISAACSIM_VERSION
+    --secret id=gitconfig,src=$HOME/.gitconfig \
     --build-arg ISAACSIM_VERSION=4.5.0 \
     --build-arg ISAACLAB_REPO=https://github.com/isaac-sim/IsaacLab.git \
     --build-arg ISAACLAB_REF=v2.1.0 \
-    --build-arg PROXY=http://127.0.0.1:7890 \
     --network=host --progress=plain \
-    -t isaaclab_image:v0 .
+    -t vtol_rl:v0 .
 
 
-run:
+run-container:
     docker run --name woneuver -itd --privileged --gpus all --network host \
     --entrypoint bash \
     -e ACCEPT_EULA=Y -e PRIVACY_CONSENT=Y \
@@ -26,12 +26,31 @@ run:
     -v ~/docker/isaac-sim/data:/root/.local/share/ov/data:rw \
     -v ~/docker/isaac-sim/documents:/root/Documents:rw \
     -v $(pwd):/workspace/isaac_drone_racer \
-    isaaclab_image:v0
+    vtol_rl:v0
+
+r: run-container
 
 exec:
     docker exec -it woneuver /bin/bash
 
+stop-container:
+    docker stop woneuver && docker rm woneuver
 
+s: stop-container
+
+###  Container Operations  ###
+init:
+    ${ISAACLAB_PATH}/isaaclab.sh -p -m pip install -e . && \
+    export DISPLAY=:0 
+    /workspace/isaaclab/_isaac_sim/isaac-sim.sh --reset-user \
 sim:
-    export DISPLAY=:0
-    /workspace/isaaclab/_isaac_sim/isaac-sim.sh --reset-user 
+    export DISPLAY=:0 
+    /workspace/isaaclab/_isaac_sim/isaac-sim.sh --reset-user \
+
+train:
+    ${ISAACLAB_PATH}/_isaac_sim/python.sh scripts/rl/train.py \
+    --task Isaac-Drone-Racer-v0 --headless --num_envs 4096
+
+demo:
+    ${ISAACLAB_PATH}/_isaac_sim/python.sh \
+    scripts/rl/play.py --task Isaac-Drone-Racer-Play-v0 --num_envs 10 --enable_camera

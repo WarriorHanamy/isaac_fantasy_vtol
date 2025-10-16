@@ -11,6 +11,7 @@ ARG ROS2_APT_PACKAGE=ros-base
 ARG ISAACLAB_REPO=https://github.com/isaac-sim/IsaacLab.git
 ARG ISAACLAB_REF=v2.1.0
 
+
 ENV ISAACSIM_VERSION=${ISAACSIM_VERSION} \
     ISAACSIM_ROOT_PATH=${ISAACSIM_ROOT_PATH} \
     ISAACLAB_PATH=${ISAACLAB_PATH} \
@@ -32,6 +33,10 @@ ENV ROS2_APT_PACKAGE=${ROS2_APT_PACKAGE}
 SHELL ["/bin/bash", "-c"]
 
 USER root
+
+RUN sed -i 's/archive.ubuntu.com/mirrors.aliyun.com/g' /etc/apt/sources.list && \
+    sed -i 's/security.ubuntu.com/mirrors.aliyun.com/g' /etc/apt/sources.list
+
 RUN --mount=type=cache,target=/var/cache/apt \
     apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
@@ -43,31 +48,22 @@ RUN --mount=type=cache,target=/var/cache/apt \
     curl \
     gedit \
     tmux \
+    vim \
     software-properties-common 
 
-RUN touch /root/.gitconfig
 
-RUN apt-get install -y git-lfs && \
-    git lfs install
-
-RUN --mount=type=secret,id=gitconfig,target=/root/.gitconfig \
-    cat /root/.gitconfig && \
-    git clone --branch ${ISAACLAB_REF} --depth 1 ${ISAACLAB_REPO} ${ISAACLAB_PATH} && \
+RUN git clone --branch ${ISAACLAB_REF} --depth 1 ${ISAACLAB_REPO} ${ISAACLAB_PATH} && \
     rm -rf ${ISAACLAB_PATH}/.git
 
 RUN chmod +x ${ISAACLAB_PATH}/isaaclab.sh
 
 RUN ln -sf ${ISAACSIM_ROOT_PATH} ${ISAACLAB_PATH}/_isaac_sim
 
-# RUN ${ISAACLAB_PATH}/isaaclab.sh --install
-
+RUN ${ISAACLAB_PATH}/isaaclab.sh -p -m pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple/
 RUN ${ISAACLAB_PATH}/isaaclab.sh -p -m pip install --upgrade pip 
 
-RUN ${ISAACLAB_PATH}/isaaclab.sh -p -m pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple/
-
 RUN ${ISAACLAB_PATH}/isaaclab.sh -p -m pip install toml SciencePlots pytest lark 
-RUN ${ISAACLAB_PATH}/isaaclab.sh -p -m pip install usd-core 
-
+RUN ${ISAACLAB_PATH}/isaaclab.sh -p -m pip install usd-core
 RUN --mount=type=cache,target=/var/cache/apt \
     ${ISAACLAB_PATH}/isaaclab.sh -p ${ISAACLAB_PATH}/tools/install_deps.py apt ${ISAACLAB_PATH}/source
 
@@ -89,8 +85,7 @@ RUN touch /bin/nvidia-smi && \
     mkdir -p /var/run/nvidia-persistenced && \
     touch /var/run/nvidia-persistenced/socket
 
-RUN --mount=type=secret,id=gitconfig,target=/root/.gitconfig \
-    --mount=type=cache,target=${DOCKER_USER_HOME}/.cache/pip \
+RUN --mount=type=cache,target=${DOCKER_USER_HOME}/.cache/pip \
     ${ISAACLAB_PATH}/isaaclab.sh --install
 
 RUN ${ISAACLAB_PATH}/isaaclab.sh -p -m pip uninstall -y quadprog
@@ -124,6 +119,10 @@ RUN echo "export ISAACLAB_PATH=${ISAACLAB_PATH}" >> ${HOME}/.bashrc && \
     echo "shopt -s histappend" >> /root/.bashrc && \
     echo "PROMPT_COMMAND='history -a'" >> /root/.bashrc
 
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && \
+    source "$HOME/.cargo/env" && \
+    cargo install just
+
 VOLUME [ \
     "/isaac-sim/kit/cache", \
     "/root/.cache/ov", \
@@ -137,7 +136,7 @@ VOLUME [ \
     "/workspace/isaaclab/data_storage" \
 ]
 
-WORKDIR /workspace
+WORKDIR /workspace/isaac_drone_racer
 # -----------------------------------------------------
 # TODO： 减小本地化size
 # RUN apt -y autoremove && apt clean autoclean && \
