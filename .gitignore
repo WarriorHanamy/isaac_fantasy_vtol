@@ -67,3 +67,6 @@ _build
 
 # Teleop Recorded Dataset
 datasets
+
+# Local configuration files
+SKIP_WORKTREE_README.md
