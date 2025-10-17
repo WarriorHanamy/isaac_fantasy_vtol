@@ -216,7 +216,7 @@ class DroneRacerEnvCfg(ManagerBasedRLEnvCfg):
             self.scene.tiled_camera = None
             self.commands.target.record_fpv = False
         else:
-            self.commands.target.record_fpv = True
+            self.commands.target.record_fpv = False
 
         # MDP settings
         self.observations.critic = None
@@ -246,7 +246,7 @@ class DroneRacerEnvCfg_PLAY(ManagerBasedRLEnvCfg):
     rewards: RewardsCfg = RewardsCfg()
     terminations: TerminationsCfg = TerminationsCfg()
 
-    enable_fpv_camera: bool = True
+    enable_fpv_camera: bool = False
 
     # Post initialization
     def __post_init__(self) -> None:
@@ -258,7 +258,7 @@ class DroneRacerEnvCfg_PLAY(ManagerBasedRLEnvCfg):
             self.scene.tiled_camera = None
             self.commands.target.record_fpv = False
         else:
-            self.commands.target.record_fpv = True
+            self.commands.target.record_fpv = False
 
         # MDP settings
         self.observations.critic = None

@@ -196,13 +196,13 @@ class ControlActionCfg(ActionTermCfg):
     """Maximum angular velocity of the drone motors in rad/s.
     Calculated with 1950KV motor, with 6S LiPo battery with 4.2V per cell.
     1950 * 6 * 4.2 = 49,140 RPM ~= 5145 rad/s."""
-    taus: list[float] = (0.0001, 0.0001, 0.0001, 0.0001)
+    taus: list[float] = [0.0001, 0.0001, 0.0001, 0.0001]
     """Time constants for each motor."""
-    init: list[float] = (2572.5, 2572.5, 2572.5, 2572.5)
+    init: list[float] = [2572.5, 2572.5, 2572.5, 2572.5]
     """Initial angular velocities for each motor in rad/s."""
-    max_rate: list[float] = (50000.0, 50000.0, 50000.0, 50000.0)
+    max_rate: list[float] = [50000.0, 50000.0, 50000.0, 50000.0]    
     """Maximum rate of change of angular velocities for each motor in rad/s^2."""
-    min_rate: list[float] = (-50000.0, -50000.0, -50000.0, -50000.0)
+    min_rate: list[float] = [-50000.0, -50000.0, -50000.0, -50000.0]
     """Minimum rate of change of angular velocities for each motor in rad/s^2."""
     use_motor_model: bool = False
     """Flag to determine if motor delay is bypassed."""
