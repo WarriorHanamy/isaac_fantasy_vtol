@@ -17,3 +17,4 @@ python scripts/rl/play.py --task Isaac-Drone-Racer-Play-v0 --num_envs 1 \
   --checkpoint /workspace/isaac_drone_racer/logs/skrl/drone_racer/2025-10-11_15-54-52_ppo_torch/checkpoints/best_agent.pt \
   env.enable_fpv_camera=True
 ``` -->
+key
