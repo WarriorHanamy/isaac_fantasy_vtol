@@ -113,7 +113,8 @@ def lookat_next_gate(
 
     drone_pos = asset.data.root_pos_w
     drone_att = asset.data.root_quat_w
-    next_gate_pos = env.command_manager.get_term(command_name).command[:, :3]
+    if command_name is not None:
+        next_gate_pos = env.command_manager.get_term(command_name).command[:, :3]
 
     vec_to_gate = next_gate_pos - drone_pos
     vec_to_gate = math_utils.normalize(vec_to_gate)

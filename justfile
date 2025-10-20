@@ -33,10 +33,10 @@ r: run-container
 exec:
     docker exec -it woneuver /bin/bash
 
-stop-container:
+stop:
     docker stop woneuver && docker rm woneuver
 
-s: stop-container
+s: stop
 
 ###  Container Operations  ###
 init:
@@ -53,4 +53,9 @@ train:
 
 demo:
     ${ISAACLAB_PATH}/_isaac_sim/python.sh \
-    scripts/rl/play.py --task Isaac-Drone-Racer-Play-v0 --num_envs 10 --enable_camera
+    scripts/rl/play.py --task Isaac-Drone-Racer-Play-v0 --num_envs 10 --enable_camera \
+    --log
+
+try:
+    ${ISAACLAB_PATH}/_isaac_sim/python.sh \
+    tutorials/generate_scene.py --device cpu

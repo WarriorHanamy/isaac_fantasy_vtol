@@ -252,7 +252,7 @@ class DroneRacerEnvCfg_PLAY(ManagerBasedRLEnvCfg):
     def __post_init__(self) -> None:
         """Post initialization."""
 
-        # Disable IMU for play mode
+        # Disable IMU for play mode #Question
         self.scene.imu = None
         if not self.enable_fpv_camera:
             self.scene.tiled_camera = None

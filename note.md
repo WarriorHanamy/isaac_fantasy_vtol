@@ -1,3 +1,11 @@
+# uv pip installation helpers
+export PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple/
+```uv.toml
+[[index]]
+url = "https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple"
+default = true
+```
+But, when `the isaaclab.sh --install`, it don't read uv.toml mechanically.
 # 复现笔记
 
 xhost +local:root

@@ -237,10 +237,10 @@ class GateTargetingCommandCfg(CommandTermCfg):
 
     class_type: type = GateTargetingCommand
 
-    asset_name: str = MISSING
+    asset_name: str | object = MISSING
     """Name of the asset in the environment for which the commands are generated."""
 
-    track_name: str = MISSING
+    track_name: str | object = MISSING
     """Name of the track in the environment for which the commands are generated."""
 
     randomise_start: bool | None = None
