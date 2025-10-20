@@ -11,6 +11,7 @@ build:
 
 
 run-container:
+    xhost +local:docker
     docker run --name woneuver -itd --privileged --gpus all --network host \
     --entrypoint bash \
     -e ACCEPT_EULA=Y -e PRIVACY_CONSENT=Y \
@@ -28,6 +29,7 @@ run-container:
     -v $(pwd):/workspace/isaac_drone_racer \
     vtol_rl:v0
 
+run: run-container
 r: run-container
 
 exec:
@@ -53,9 +55,28 @@ train:
 
 demo:
     ${ISAACLAB_PATH}/_isaac_sim/python.sh \
-    scripts/rl/play.py --task Isaac-Drone-Racer-Play-v0 --num_envs 10 --enable_camera \
-    --log
+    scripts/rl/play.py --task Isaac-Drone-Racer-Play-v0 --num_envs 1  
 
+
+### tutorials for totally beginners
 try:
     ${ISAACLAB_PATH}/_isaac_sim/python.sh \
     tutorials/generate_scene.py --device cpu
+
+compare-reward:
+    export DISPLAY=:0 
+    ${ISAACLAB_PATH}/_isaac_sim/python.sh \
+    tutorials/shaped_reward_comparison.py --device cpu
+
+
+### Records
+record-video:
+    ffmpeg -video_size 2560x1440 -framerate 25 -f x11grab \
+    -i :0.0 output.mp4
+
+
+train-logged:
+      ${ISAACLAB_PATH}/_isaac_sim/python.sh scripts/rl/train.py \
+      --task Isaac-Drone-Racer-v0 --headless --num_envs 4096 \
+      agent.experiment.write_interval=1000 \
+      trainer.environment_info=log

@@ -38,13 +38,10 @@ class DroneRacerSceneCfg(InteractiveSceneCfg):
     # track
     track: RigidObjectCollectionCfg = generate_track(
         track_config={
-            "1": {"pos": (0.0, 0.0, 1.0), "yaw": 0.0},
-            "2": {"pos": (10.0, 5.0, 0.0), "yaw": 0.0},
-            "3": {"pos": (10.0, -5.0, 0.0), "yaw": (5 / 4) * torch.pi},
-            "4": {"pos": (-5.0, -5.0, 2.5), "yaw": torch.pi},
-            "5": {"pos": (-5.0, -5.0, 0.0), "yaw": 0.0},
-            "6": {"pos": (5.0, 0.0, 0.0), "yaw": (1 / 2) * torch.pi},
-            "7": {"pos": (0.0, 5.0, 0.0), "yaw": torch.pi},
+            "1": {"pos": (0.0, 0.0, 0.0), "yaw": (1 / 4) * torch.pi},
+            "2": {"pos": (5.0, 0.0, 0.0), "yaw": (3 / 4) * torch.pi},
+            "3": {"pos": (5.0, 5.0, 0.0), "yaw": (5 / 4) * torch.pi},
+            "4": {"pos": (0.0, 5.0, 0.0), "yaw": (7 / 4) * torch.pi},
         }
     )
 
@@ -173,22 +170,24 @@ class CommandsCfg:
 class RewardsCfg:
     """Reward terms for the MDP."""
 
-    terminating = RewTerm(func=mdp.is_terminated, weight=-500.0)
-    ang_vel_l2 = RewTerm(func=mdp.ang_vel_l2, weight=-0.0001)
-    progress = RewTerm(func=mdp.progress, weight=20.0, params={"command_name": "target"})
-    gate_passed = RewTerm(func=mdp.gate_passed, weight=400.0, params={"command_name": "target"})
-    lookat_next = RewTerm(func=mdp.lookat_next_gate, weight=0.1, params={"command_name": "target", "std": 0.5})
+    terminating: RewTerm = RewTerm(func=mdp.is_terminated, weight=-500.0)
+    ang_vel_l2: RewTerm = RewTerm(func=mdp.ang_vel_l2, weight=-0.0001)
+    progress: RewTerm = RewTerm(func=mdp.progress, weight=20.0, params={"command_name": "target"})
+    gate_passed: RewTerm = RewTerm(func=mdp.gate_passed, weight=400.0, params={"command_name": "target"})
+    # lookat_next: RewTerm = RewTerm(func=mdp.lookat_next_gate, weight=0.1, params={"command_name": "target", "std": 0.5})
+    lookat_next: RewTerm = RewTerm(func=mdp.lookat_next_gate, weight=0.5, params={"command_name": "target", "std": 0.5})
 
 
 @configclass
 class TerminationsCfg:
     """Termination terms for the MDP."""
 
-    time_out = DoneTerm(func=mdp.time_out, time_out=True)
-    flyaway = DoneTerm(func=mdp.flyaway, params={"command_name": "target", "distance": 20.0})
-    collision = DoneTerm(
+    time_out : DoneTerm = DoneTerm(func=mdp.time_out, time_out=True)
+    collision: DoneTerm = DoneTerm(
         func=mdp.illegal_contact, params={"sensor_cfg": SceneEntityCfg("collision_sensor"), "threshold": 0.01}
     )
+    flyaway: DoneTerm = DoneTerm(func=mdp.flyaway, params={"command_name": "target", "distance": 20.0})
+
 
 
 @configclass

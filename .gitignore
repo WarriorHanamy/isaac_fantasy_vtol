@@ -70,3 +70,8 @@ datasets
 
 # Local configuration files
 SKIP_WORKTREE_README.md
+
+
+# Tutorials
+tutorials/figures/*
+*.mp4

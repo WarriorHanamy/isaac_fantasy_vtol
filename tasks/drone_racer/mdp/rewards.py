@@ -15,6 +15,8 @@ import torch
 from isaaclab.assets import RigidObject
 from isaaclab.managers import SceneEntityCfg
 
+from utils.logger import log
+
 if TYPE_CHECKING:
     from isaaclab.envs import ManagerBasedRLEnv
 
@@ -40,7 +42,9 @@ def pos_error_l2(
         )
 
     # Compute sum of squared errors
-    return torch.sum(torch.square(asset.data.root_pos_w - target_pos_tensor), dim=1)
+    error = torch.sum(torch.square(asset.data.root_pos_w - target_pos_tensor), dim=1)
+    log(env, ["reward/pos_error_l2"], error.unsqueeze(1))
+    return error
 
 
 def pos_error_tanh(
@@ -65,7 +69,9 @@ def pos_error_tanh(
         )
 
     distance = torch.norm(asset.data.root_pos_w - target_pos_tensor, dim=1)
-    return 1 - torch.tanh(distance / std)
+    reward = 1 - torch.tanh(distance / std)
+    log(env, ["reward/pos_error_tanh"], reward.unsqueeze(1))
+    return reward
 
 
 def progress(
@@ -86,6 +92,7 @@ def progress(
     current_distance = torch.norm(current_pos - target_pos, dim=1)
 
     progress = prev_distance - current_distance
+    log(env, ["reward/progress"], progress.unsqueeze(1))
 
     return progress
 
@@ -97,9 +104,15 @@ def gate_passed(
     """Reward for passing a gate."""
     missed = (-1.0) * env.command_manager.get_term(command_name).gate_missed
     passed = (1.0) * env.command_manager.get_term(command_name).gate_passed
-    return missed + passed
+    reward = missed + passed
+    log(env, ["reward/gate_passed"], reward.unsqueeze(1))
+    return reward
 
 
+# rec: here is too wild.
+# actually, it is BVP
+# current is cur:(p,v,a,j), target:(p,*,*,*). if it is a terminate state, the last 3 terms are 0.
+# lookat_next_gate should be the gate lies in the frustum of the drone camera.
 def lookat_next_gate(
     env: ManagerBasedRLEnv,
     std: float,
@@ -125,11 +138,15 @@ def lookat_next_gate(
 
     dot = (drone_x_axis * vec_to_gate).sum(dim=1).clamp(-1.0, 1.0)
     angle = torch.acos(dot)
-    return torch.exp(-angle / std)
+    reward = torch.exp(-angle / std)
+    log(env, ["reward/lookat_next_gate"], reward.unsqueeze(1))
+    return reward
 
 
 def ang_vel_l2(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
     """Penalize base angular velocity using L2 squared kernel."""
     # extract the used quantities (to enable type-hinting)
     asset: RigidObject = env.scene[asset_cfg.name]
-    return torch.sum(torch.square(asset.data.root_ang_vel_b), dim=1)
+    penalty = torch.sum(torch.square(asset.data.root_ang_vel_b), dim=1)
+    log(env, ["reward/ang_vel_l2"], penalty.unsqueeze(1))
+    return penalty

@@ -107,6 +107,22 @@ Environment.step() →
 - **Realism**: High with motor dynamics enabled
 - **Training difficulty**: Moderate (default configuration)
 
+## Monitoring Training Metrics
+
+### TensorBoard (Losses & Episodic Rewards)
+- **Where**: Training automatically writes TensorBoard event files to `logs/skrl/<experiment>/`.
+- **Enable finer logging**: Override the writer interval from the CLI, for example  
+  `python3 scripts/rl/train.py --task Isaac-Drone-Racer-v0 agent.experiment.write_interval=1000`.
+- **View during/after training**: In another terminal run `tensorboard --logdir logs/skrl --port 6006` and open <http://localhost:6006>.  
+  Key scalars include `policy_loss`, `value_loss`, `entropy`, `learning_rate`, and `rollout/episodic_return`.
+
+### Reward Components
+- **What**: Each reward term now logs under `reward/<term_name>` (e.g., `reward/progress`, `reward/gate_passed`).
+- **During evaluation**: Use the CSV logger in `play.py`, for example  
+  `python3 scripts/rl/play.py --task Isaac-Drone-Racer-Play-v0 --num_envs 1 --log 5`  
+  to record 5 evaluation episodes into `logs/skrl/.../log_<timestamp>.csv`.
+- **Training insight**: Combine the CSV reward traces with TensorBoard’s episodic returns to understand which terms are dominating learning across epochs.
+
 ## Configuration Parameters and Their Effects
 
 ### Motor Parameters

@@ -31,7 +31,6 @@ def generate_track(track_config: dict | None) -> RigidObjectCollectionCfg:
                         torch.tensor(0.0), torch.tensor(0.0), torch.tensor(gate_config["yaw"])
                     ).tolist(),
                 ),
-            )
-            for gate_id, gate_config in track_config.items()
+            ) for gate_id, gate_config in track_config.items()
         }
     )
