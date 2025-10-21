@@ -43,7 +43,9 @@ class ControlAction(ActionTerm):
         self._elapsed_time = torch.zeros(self.num_envs, 1, device=self.device)
         self._raw_actions = torch.zeros(self.num_envs, 4, device=self.device)
         self._processed_actions = torch.zeros(self.num_envs, 4, device=self.device)
+        # self._thrust is a batched thrust vector3. (num_envs, 1, 3)
         self._thrust = torch.zeros(self.num_envs, 1, 3, device=self.device)
+        # self._moment is a batched thrust vector3. (num_envs, 1, 3)
         self._moment = torch.zeros(self.num_envs, 1, 3, device=self.device)
 
         self._allocation = Allocation(
@@ -207,7 +209,7 @@ class ControlActionCfg(ActionTermCfg):
     use_motor_model: bool = False
     """Flag to determine if motor delay is bypassed."""
     control_mode: str = "body_rate"
-    """Control strategy: 'motor' for direct rotor commands, 'body_rate' for throttle + rate commands."""
+    """'motor' or 'body_rate' for throttle + rate commands."""
     rate_gains: tuple[float, float, float] = (0.02, 0.02, 0.01)
     """Proportional gains used by the body-rate controller."""
     max_body_rate: tuple[float, float, float] = (10.0, 10.0, 5.0)

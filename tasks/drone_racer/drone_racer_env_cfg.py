@@ -38,10 +38,10 @@ class DroneRacerSceneCfg(InteractiveSceneCfg):
     # track
     track: RigidObjectCollectionCfg = generate_track(
         track_config={
-            "1": {"pos": (0.0, 0.0, 0.0), "yaw": (0.0) * torch.pi},
+            "1": {"pos": (5.0, 0.0, 0.0), "yaw": (1 / 4) * torch.pi},
             "2": {"pos": (10.0, 0.0, 0.0), "yaw": (3 / 4) * torch.pi},
-            "3": {"pos": (10.0, 10.0, 0.0), "yaw": (5 / 4) * torch.pi},
-            "4": {"pos": (0.0, 10.0, 0.0), "yaw": (7 / 4) * torch.pi},
+            "3": {"pos": (10.0, 10.0, 0.0), "yaw": (1) * torch.pi},
+            "4": {"pos": (0.0, 10.0, 0.0), "yaw": (6 / 4) * torch.pi},
         }
     )
 
