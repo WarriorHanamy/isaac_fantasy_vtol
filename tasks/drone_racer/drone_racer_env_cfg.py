@@ -38,10 +38,10 @@ class DroneRacerSceneCfg(InteractiveSceneCfg):
     # track
     track: RigidObjectCollectionCfg = generate_track(
         track_config={
-            "1": {"pos": (0.0, 0.0, 0.0), "yaw": (1 / 4) * torch.pi},
-            "2": {"pos": (5.0, 0.0, 0.0), "yaw": (3 / 4) * torch.pi},
-            "3": {"pos": (5.0, 5.0, 0.0), "yaw": (5 / 4) * torch.pi},
-            "4": {"pos": (0.0, 5.0, 0.0), "yaw": (7 / 4) * torch.pi},
+            "1": {"pos": (0.0, 0.0, 0.0), "yaw": (0.0) * torch.pi},
+            "2": {"pos": (10.0, 0.0, 0.0), "yaw": (3 / 4) * torch.pi},
+            "3": {"pos": (10.0, 10.0, 0.0), "yaw": (5 / 4) * torch.pi},
+            "4": {"pos": (0.0, 10.0, 0.0), "yaw": (7 / 4) * torch.pi},
         }
     )
 
@@ -172,7 +172,15 @@ class RewardsCfg:
 
     terminating: RewTerm = RewTerm(func=mdp.is_terminated, weight=-500.0)
     ang_vel_l2: RewTerm = RewTerm(func=mdp.ang_vel_l2, weight=-0.0001)
-    progress: RewTerm = RewTerm(func=mdp.progress, weight=20.0, params={"command_name": "target"})
+    # progress: RewTerm = RewTerm(func=mdp.progress, weight=20.0, params={"command_name": "target"})
+    coordinated_flight: RewTerm = RewTerm(
+        func=mdp.progress_cooridinated_flight,
+        weight=10.0,
+        params={
+            "command_name": "target",
+            "std": 10.0,
+        },
+    )
     gate_passed: RewTerm = RewTerm(func=mdp.gate_passed, weight=400.0, params={"command_name": "target"})
     # lookat_next: RewTerm = RewTerm(func=mdp.lookat_next_gate, weight=0.1, params={"command_name": "target", "std": 0.5})
     lookat_next: RewTerm = RewTerm(func=mdp.lookat_next_gate, weight=0.5, params={"command_name": "target", "std": 0.5})

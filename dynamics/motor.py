@@ -57,23 +57,23 @@ class Motor:
         self.max_rate: torch.Tensor = torch.tensor(max_rate, device=device, dtype=dtype).expand(num_envs, -1)
         self.min_rate: torch.Tensor = torch.tensor(min_rate, device=device, dtype=dtype).expand(num_envs, -1)
 
-    def compute(self, omega_ref: torch.Tensor) -> torch.Tensor:
+    def compute(self, omega_cmd: torch.Tensor) -> torch.Tensor:
         """
-        Computes the new omega values based on reference omega and motor dynamics.
+        Computes the new omega values based on commanded omega and motor dynamics.
 
         Parameters:
-        - omega_ref: (num_envs, num_motors) Tensor of reference omega values.
+        - omega_cmd: (num_envs, num_motors) Tensor of commanded omega values.
 
         Returns:
         - omega: (num_envs, num_motors) Tensor of updated omega values.
         """
 
         if not self.use:
-            self.omega = omega_ref
+            self.omega = omega_cmd
             return self.omega
 
         # Compute omega rate using first-order motor dynamics
-        omega_rate = (1.0 / self.tau) * (omega_ref - self.omega)  # (num_envs, num_motors)
+        omega_rate = (1.0 / self.tau) * (omega_cmd - self.omega)  # (num_envs, num_motors)
         omega_rate = omega_rate.clamp(self.min_rate, self.max_rate)
 
         # Integrate

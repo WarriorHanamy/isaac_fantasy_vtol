@@ -1,4 +1,6 @@
 # Drone Racing Training Procedure and Dynamics Analysis
+## Action space
+A Benchmark Comparison of Learned Control Policies  for Agile Quadrotor Flight: into a) Linear Velocity Commands (LV), b) Collective Thrust and Bodyrates (CTBR), and c) Single Rotor Thrusts (SRT).
 
 ## Overview
 
@@ -79,7 +81,7 @@ Agent Actions → ControlAction.process_actions() → Dynamics Chain → Robot F
 3. **Control Loop**:
    - **Body Rate Controller**: `torque_cmd = BodyRateController.compute(current_rates, desired_rates)`
    - **Allocation**: `omega_ref = Allocation.omega_from_wrench(wrench_cmd)`
-   - **Motor Dynamics**: `omega_real = Motor.compute(omega_ref)`
+   - **Motor Dynamics**: `omega_real = Motor.compute(omega_cmd)`
    - **Force Computation**: `thrust_torque = Allocation.compute(omega_real)`
 4. **Physics Application**: Forces applied to robot in simulation
 

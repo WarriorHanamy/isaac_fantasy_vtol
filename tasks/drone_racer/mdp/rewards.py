@@ -74,6 +74,43 @@ def pos_error_tanh(
     return reward
 
 
+def progress_cooridinated_flight(
+    env: ManagerBasedRLEnv,
+    command_name: str,
+    std: float,
+    asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
+) -> torch.Tensor:
+    """Penalize asset pos from its target pos using L2 squared kernel."""
+
+    # extract the used quantities (to enable type-hinting)
+    asset: RigidObject = env.scene[asset_cfg.name]
+
+    # Progress calculation
+    target_pos = env.command_manager.get_term(command_name).command[:, :3]
+    previous_pos = env.command_manager.get_term(command_name).previous_pos
+    current_pos = asset.data.root_pos_w
+
+    prev_distance = torch.norm(previous_pos - target_pos, dim=1)
+    current_distance = torch.norm(current_pos - target_pos, dim=1)
+
+    progress = prev_distance - current_distance
+    log(env, ["reward/progress"], progress.unsqueeze(1))
+
+    # Coordinated flight calculation
+    vel_body = asset.data.root_lin_vel_b
+    vel_body_y = vel_body[:, 1]
+
+    coordinated_flight_reward = 1.0 - torch.tanh(torch.abs(vel_body_y) / std)
+
+    log(env, ["reward/coordinated_flight/side_speed"], vel_body_y.unsqueeze(1))
+    log(env, ["reward/coordinated_flight/coordinated_flight_reward"], coordinated_flight_reward.unsqueeze(1))
+
+    reward = progress * coordinated_flight_reward
+
+    log(env, ["reward/coordinated_flight/total_reward"], reward.unsqueeze(1))
+    return reward
+
+
 def progress(
     env: ManagerBasedRLEnv,
     command_name: str,
@@ -97,6 +134,26 @@ def progress(
     return progress
 
 
+def coordinated_flight(
+    env: ManagerBasedRLEnv,
+    std: float,
+    asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
+) -> torch.Tensor:
+    """Reward smooth, well-aligned flight using path, attitude, and velocity alignment shaped terms."""
+
+    asset: RigidObject = env.scene[asset_cfg.name]
+
+    vel_body = asset.data.root_lin_vel_b
+    vel_body_y = vel_body[:, 1]
+
+    reward = 1.0 - torch.tanh(torch.abs(vel_body_y) / std)
+
+    log(env, ["reward/coordinated_flight/side_speed"], vel_body_y.unsqueeze(1))
+    log(env, ["reward/coordinated_flight/reward"], reward.unsqueeze(1))
+
+    return reward
+
+
 def gate_passed(
     env: ManagerBasedRLEnv,
     command_name: str | None = None,
@@ -109,6 +166,15 @@ def gate_passed(
     return reward
 
 
+def ang_vel_l2(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
+    """Penalize base angular velocity using L2 squared kernel."""
+    # extract the used quantities (to enable type-hinting)
+    asset: RigidObject = env.scene[asset_cfg.name]
+    penalty = torch.sum(torch.square(asset.data.root_ang_vel_b), dim=1)
+    log(env, ["reward/ang_vel_l2"], penalty.unsqueeze(1))
+    return penalty
+
+
 # rec: here is too wild.
 # actually, it is BVP
 # current is cur:(p,v,a,j), target:(p,*,*,*). if it is a terminate state, the last 3 terms are 0.
@@ -116,7 +182,7 @@ def gate_passed(
 def lookat_next_gate(
     env: ManagerBasedRLEnv,
     std: float,
-    command_name: str | None = None,
+    command_name: str,
     asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
 ) -> torch.Tensor:
     """Reward for looking at the next gate."""
@@ -126,8 +192,7 @@ def lookat_next_gate(
 
     drone_pos = asset.data.root_pos_w
     drone_att = asset.data.root_quat_w
-    if command_name is not None:
-        next_gate_pos = env.command_manager.get_term(command_name).command[:, :3]
+    next_gate_pos = env.command_manager.get_term(command_name).command[:, :3]
 
     vec_to_gate = next_gate_pos - drone_pos
     vec_to_gate = math_utils.normalize(vec_to_gate)
@@ -141,12 +206,3 @@ def lookat_next_gate(
     reward = torch.exp(-angle / std)
     log(env, ["reward/lookat_next_gate"], reward.unsqueeze(1))
     return reward
-
-
-def ang_vel_l2(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
-    """Penalize base angular velocity using L2 squared kernel."""
-    # extract the used quantities (to enable type-hinting)
-    asset: RigidObject = env.scene[asset_cfg.name]
-    penalty = torch.sum(torch.square(asset.data.root_ang_vel_b), dim=1)
-    log(env, ["reward/ang_vel_l2"], penalty.unsqueeze(1))
-    return penalty
