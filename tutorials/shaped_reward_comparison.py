@@ -1,8 +1,9 @@
+import os
+from pathlib import Path
 import torch
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
-import os
 
 def pos_error_l2(current_pos: torch.Tensor, target_pos: torch.Tensor) -> torch.Tensor:
     """
@@ -42,6 +43,23 @@ tanh_reward_std3 = pos_error_tanh(positions, target, std=3.0)
 
 
 # --- Plotting ---
+# Configure paths for outputs
+_SCRIPT_DIR = Path(__file__).resolve().parent
+_FIGURES_DIR = _SCRIPT_DIR / "figures"
+_FIGURES_DIR.mkdir(exist_ok=True)
+
+def _maybe_show(fig):
+    """Display the figure only when an interactive backend is available."""
+    backend = plt.get_backend().lower()
+    if 'agg' in backend or os.environ.get("DISPLAY", "") == "":
+        plt.close(fig)
+    else:
+        plt.show()
+
+def _save_fig(fig: plt.Figure, filename: str, **kwargs):
+    """Save figure outputs to the local tutorial figures directory."""
+    fig.savefig(_FIGURES_DIR / filename, **kwargs)
+
 plt.style.use('seaborn-v0_8-whitegrid')
 fig, ax = plt.subplots(figsize=(10, 6))
 
@@ -56,9 +74,5 @@ ax.legend(fontsize=10)
 ax.axhline(0, color='black', linewidth=0.5)  # Add a line at y=0
 ax.set_ylim(-10, 1.2)  # Set y-limits to better see the tanh curve
 
-current_file_folder = os.path.dirname(os.path.abspath(__file__))
-saved_folder = os.path.join(current_file_folder, 'figures')
-if not os.path.exists(saved_folder):
-    os.makedirs(saved_folder)
-
-plt.savefig(os.path.join(saved_folder, 'reward_function_comparison.png'))
+_save_fig(fig, 'reward_function_comparison.png', dpi=300, bbox_inches='tight')
+_maybe_show(fig)
