@@ -1,0 +1,164 @@
+# Copyright (c) 2022-2025, The Isaac Lab Project Developers (https://github.com/isaac-sim/IsaacLab/blob/main/CONTRIBUTORS.md).
+# All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+"""This script demonstrates how to spawn prims into the scene.
+
+.. code-block:: bash
+
+    # Usage
+  ./isaaclab.sh -p scripts/tutorials/00_sim/spawn_prims.py
+
+"""
+
+"""Launch Isaac Sim Simulator first."""
+
+
+import argparse
+
+from isaaclab.app import AppLauncher
+
+# 创建参数解析器
+parser = argparse.ArgumentParser(description="Tutorial on spawning prims into the scene.")
+# 添加AppLauncher的命令行参数
+AppLauncher.add_app_launcher_args(parser)
+# 解析参数
+args_cli = parser.parse_args()
+# 启动Omniverse应用
+app_launcher = AppLauncher(args_cli)
+simulation_app = app_launcher.app
+
+"""Rest everything follows."""
+
+import isaacsim.core.utils.prims as prim_utils
+from pxr import UsdGeom, UsdPhysics, Gf
+
+import isaaclab.sim as sim_utils
+from isaaclab.utils.assets import ISAAC_NUCLEUS_DIR
+
+
+def design_scene():
+    """通过生成地面、灯光、物体和从USD文件加载的网格来设计场景。"""
+    # 地面
+    cfg_ground = sim_utils.GroundPlaneCfg()
+    cfg_ground.func("/World/defaultGroundPlane", cfg_ground)
+
+    # 生成平行光
+    cfg_light_distant = sim_utils.DistantLightCfg(
+        intensity=3000.0,
+        color=(0.75, 0.75, 0.75),
+    )
+    cfg_light_distant.func("/World/lightDistant", cfg_light_distant, translation=(1, 0, 10))
+
+    # 为所有要生成的对象创建一个新的xform图元作为父级
+    prim_utils.create_prim("/World/Objects", "Xform")
+    # 生成一个带碰撞体和刚体属性的绿色圆锥体 (初始半径 0.1)
+    cfg_cone_rigid = sim_utils.ConeCfg(
+        radius=0.1,  # <---- 初始半径
+        height=1.0,
+        mass_props=sim_utils.MassPropertiesCfg(mass=1.0),
+        collision_props=sim_utils.CollisionPropertiesCfg(),
+        rigid_props=sim_utils.RigidBodyPropertiesCfg(),
+        visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.0, 1.0, 0.0)),
+    )
+    cfg_cone_rigid.func(
+        "/World/Objects/ConeRigid", cfg_cone_rigid, translation=(-0.2, 0.0, 2.0), orientation=(0.5, 0.0, 0.5, 0.0)
+    )
+
+    # 从USD文件向场景中生成一个桌子
+    cfg = sim_utils.UsdFileCfg(usd_path=f"{ISAAC_NUCLEUS_DIR}/Props/Mounts/SeattleLabTable/table_instanceable.usd")
+    cfg.func("/World/Objects/Table", cfg, translation=(0.0, 0.0, 1.05))
+
+
+def main():
+    """主函数"""
+
+    # 初始化仿真上下文
+    sim_cfg = sim_utils.SimulationCfg(dt=0.01, device=args_cli.device)
+    sim = sim_utils.SimulationContext(sim_cfg)
+    # 设置主相机视角
+    sim.set_camera_view([2.0, 0.0, 2.5], [-0.5, 0.0, 0.5])
+
+    # 第一次设计场景 (使用 radius = 0.1)
+    design_scene()
+
+    # 第一次重置，加载初始场景到 PhysX
+    sim.reset()
+
+    # 准备就绪！
+    print("[INFO]: Setup complete... Simulating with radius 0.1. (0-1000 steps)")
+
+    # 模拟物理过程
+    step_count = 0
+    radius_changed = False  # 跟踪我们是否已经改变了半径
+
+    # 启动模拟
+    sim.play()
+
+    # 模拟循环
+    while simulation_app.is_running():
+        
+        # 检查是否需要修改
+        if step_count == 1000 and not radius_changed:
+
+            print("\n[INFO]: === Step 1000 Reached: Modifying Scene ===")
+            
+            # 1. 暂停模拟
+            print("[INFO]: Pausing simulation...")
+            sim.pause()
+
+# 2. 获取 visual prim。在这个 API 版本中，我们假设 visual 和 collision 是同一个 prim
+            visual_prim = prim_utils.get_prim_at_path("/World/Objects/ConeRigid")
+            # 尝试获取 collision prim，如果它不存在，就使用 visual_prim
+            collision_prim = prim_utils.get_prim_at_path("/World/Objects/ConeRigid/collision")
+            if not collision_prim:
+                print("[INFO]: '/collision' child prim not found. Assuming visual prim is also collision prim.")
+                collision_prim = visual_prim # <--- 关键修改
+
+            new_radius = 1.0
+
+            # 3. 检查 prims 是否存在并修改属性
+            if visual_prim and collision_prim: # 现在 collision_prim 要么是 "collision" 要么是 "ConeRigid"
+                print(f"[INFO]: Modifying prim attributes to radius {new_radius}...")
+                
+                # 修改 visual prim (Cone)
+                visual_prim.GetAttribute("radius").Set(new_radius)
+                
+                # 修改 collision prim (可能是 Cone，也可能是 Cylinder)
+                # 检查它是否也有 'radius' 属性
+                if collision_prim.HasAttribute("radius"):
+                     collision_prim.GetAttribute("radius").Set(new_radius)
+                
+                print("[INFO]: Attributes changed.")
+
+            # 4. 【关键步骤】重置模拟器
+            #    这将强制 SimulationContext 重新读取 prim 属性
+            #    并使用新半径重建 PhysX 几何体。
+            print("[INFO]: Calling sim.reset() to reload physics scene...")
+            sim.reset()
+            print("[INFO]: sim.reset() complete.")
+
+            # 5. 更新标志位
+            radius_changed = True
+
+            # 6. 恢复模拟
+            print("[INFO]: Resuming simulation with new, larger cone.")
+            print("[INFO]: ===========================================\n")
+            sim.play()
+
+        # 仅在模拟播放时执行step
+        if sim.is_playing():
+            sim.step()
+            step_count += 1
+        else:
+            # 如果模拟未运行 (例如在暂停/重置期间)，
+            # 必须手动更新 app 以保持窗口响应
+            simulation_app.update()
+
+
+if __name__ == "__main__":
+    # 运行主函数
+    main()
+    # 关闭仿真应用
+    simulation_app.close()

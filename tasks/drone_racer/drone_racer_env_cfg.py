@@ -25,7 +25,8 @@ from .track_generator import generate_track
 
 from assets.five_in_drone import FIVE_IN_DRONE  # isort:skip
 
-
+# REC: this config the scene. Contains the robot, track, sensors,
+# lights, ground plane etc.
 @configclass
 class DroneRacerSceneCfg(InteractiveSceneCfg):
 
@@ -86,6 +87,9 @@ class ObservationsCfg:
         attitude = ObsTerm(func=mdp.root_quat_w)
         lin_vel = ObsTerm(func=mdp.root_lin_vel_b)
         ang_vel = ObsTerm(func=mdp.root_ang_vel_b)
+        # REC: TODO to vision.
+        # QUST: if position in bodyframe?
+        # Yes.
         target_pos_b = ObsTerm(func=mdp.target_pos_b, params={"command_name": "target"})
         actions = ObsTerm(func=mdp.last_action)
 
@@ -120,9 +124,10 @@ class EventCfg:
     reset_base = EventTerm(
         func=mdp.reset_root_state_uniform,
         mode="reset",
+        # REC: randomize init pose ... and this Event will be called at reset time.(Termination or Timeout maybe)
         params={
             "pose_range": {
-                "x": (-3.5, -1.5),
+                "x": (-1.5, -1.5),
                 "y": (-0.5, 0.5),
                 "z": (1.5, 0.5),
                 "roll": (-0.0, 0.0),

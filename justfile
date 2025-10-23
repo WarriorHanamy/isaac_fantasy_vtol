@@ -55,7 +55,7 @@ train:
 
 demo:
     ${ISAACLAB_PATH}/_isaac_sim/python.sh \
-    scripts/rl/play.py --task Isaac-Drone-Racer-Play-v0 --num_envs 1  
+    scripts/rl/play.py --task Isaac-Drone-Racer-Play-v0 --num_envs 1 --device cpu
 
 
 ### tutorials for totally beginners
