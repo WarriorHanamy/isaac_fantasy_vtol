@@ -1,3 +1,10 @@
+# IMPORTANT.
+This codebase is not maintained!!!
+Public for 有缘人。
+Only add some coordinated flight constraints and docker building.
+
+
+
 ![Isaac Drone Racer](media/motion_trace1.jpg)
 
 ---
